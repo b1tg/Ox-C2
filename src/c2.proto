@@ -34,7 +34,11 @@ message TaskResult {
     }
 }
 
+message Empty {
+}
+
+
 service TaskService {
-    rpc PollTask () returns (Task);
-    rpc PushTaskResult (TaskResult) returns ();
+    rpc PollTask (Empty) returns (Task);
+    rpc PushTaskResult (TaskResult) returns (Empty);
 }
