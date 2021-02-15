@@ -37,17 +37,28 @@ pub struct ExecuteRes {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TaskResult {
-    #[prost(oneof = "task_result::Data", tags = "1, 2")]
+    #[prost(message, optional, tag = "1")]
+    pub bot_id: ::std::option::Option<BotId>,
+    #[prost(oneof = "task_result::Data", tags = "2, 3")]
     pub data: ::std::option::Option<task_result::Data>,
 }
 pub mod task_result {
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Data {
-        #[prost(message, tag = "1")]
-        Info(super::InfoRes),
         #[prost(message, tag = "2")]
+        Info(super::InfoRes),
+        #[prost(message, tag = "3")]
         Execute(super::ExecuteRes),
     }
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BotId {
+    #[prost(string, tag = "1")]
+    pub mac: std::string::String,
+    #[prost(string, tag = "2")]
+    pub ip: std::string::String,
+    #[prost(string, tag = "3")]
+    pub id: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Empty {}

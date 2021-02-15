@@ -15,7 +15,6 @@ message Task {
     }
 }
 
-
 message InfoRes {
     string mac = 1;
     string ip = 2;
@@ -28,17 +27,24 @@ message ExecuteRes {
 }
 
 message TaskResult {
+    BotID bot_id = 1;
     oneof data {
-        InfoRes info = 1;
-        ExecuteRes execute = 2;
+        InfoRes info = 2;
+        ExecuteRes execute = 3;
     }
 }
 
-message Empty {
+message BotID {
+    string mac = 1;
+    string ip = 2;
+    string id = 3;
 }
 
+message Empty {
+    
+}
 
 service TaskService {
-    rpc PollTask (Empty) returns (Task);
+    rpc PollTask (BotID) returns (Task);
     rpc PushTaskResult (TaskResult) returns (Empty);
 }

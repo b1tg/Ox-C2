@@ -2,7 +2,7 @@ use anyhow::Result;
 use bytes::Bytes;
 use std::io::Cursor;
 
-use c2::{task::Data, Empty, InfoReq, InfoRes};
+use c2::{task::Data, task_result, Empty, InfoReq, InfoRes};
 use prost::Message;
 use std::time::Duration;
 mod c2;
@@ -14,25 +14,22 @@ async fn main() -> Result<()> {
     }
     // Ok(())
 }
-pub fn serialize_empty(req: &c2::Empty) -> Vec<u8> {
+
+pub fn serialize_message<T: Message>(req: &T) -> Vec<u8> {
     let mut buf = Vec::new();
     buf.reserve(req.encoded_len());
     req.encode(&mut buf).unwrap();
     buf
 }
-pub fn serialize_task_result(req: &c2::TaskResult) -> Vec<u8> {
-    let mut buf = Vec::new();
-    buf.reserve(req.encoded_len());
-    req.encode(&mut buf).unwrap();
-    buf
-}
+
 pub fn deserialize_task(buf: &[u8]) -> Result<c2::Task, prost::DecodeError> {
     c2::Task::decode(&mut Cursor::new(buf))
 }
 
 async fn push_task_result(task_result: c2::TaskResult) -> Result<()> {
     println!("push task result start ...");
-    let buf = serialize_task_result(&task_result);
+
+    let buf = serialize_message(&task_result);
     let url = "http://127.0.0.1:8080/push_task_result";
     let client = reqwest::Client::new();
     let res = client
@@ -54,7 +51,11 @@ async fn poll_job() -> Result<()> {
     // let headers = reqwest::header;
 
     // let raw = [1u8; 10];
-    let raw = serialize_empty(&Empty::default());
+    let raw = serialize_message(&c2::BotId {
+        ip: "1.1.2.3".to_string(),
+        mac: "xxx1".to_string(),
+        id: "".to_string(),
+    });
     let buf = Bytes::copy_from_slice(&raw);
     // client.
     let res = client
@@ -67,7 +68,7 @@ async fn poll_job() -> Result<()> {
     let task = deserialize_task(&res_bytes).unwrap();
     // dbg!(&task);
 
-    let res = match task.data {
+    let mut res = match task.data {
         Some(Data::Info(info)) => {
             println!("got job info: {:?}", &info);
             let mut res = c2::TaskResult::default();
@@ -99,6 +100,12 @@ async fn poll_job() -> Result<()> {
             res
         }
     };
+    let bot_id = c2::BotId {
+        ip: "1.1.2.3".to_string(),
+        mac: "xxx1".to_string(),
+        id: "".to_string(),
+    };
+    res.bot_id = Some(bot_id);
     let _ = push_task_result(res).await?;
     println!("poll over ...");
     Ok(())

