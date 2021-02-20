@@ -17,6 +17,9 @@ prost = "0.6"
 prost-types = "0.6"
 actix-protobuf = "0.6.0"
 env_logger = "0.8.3"
+rustyline = "7.1.0"
+futures = "0.3.12"
+async-std = { version = "1.2.0", features = ["attributes"] }
 
 [build-dependencies]
 prost-build = { version = "0.6" }

