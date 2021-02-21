@@ -10,7 +10,7 @@ mod c2;
 async fn main() -> Result<()> {
     loop {
         poll_job().await?;
-        std::thread::sleep(Duration::new(3, 0))
+        std::thread::sleep(Duration::new(7, 0))
     }
     // Ok(())
 }
