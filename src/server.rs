@@ -239,7 +239,7 @@ async fn main() -> std::io::Result<()> {
     })
     .bind("127.0.0.1:8080")?
     .run();
-    join!(cli_future, server_future);
+    let _ = join!(cli_future, server_future);
 
     Ok(())
 }

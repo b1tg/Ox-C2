@@ -1,5 +1,5 @@
 use std::net::ToSocketAddrs;
-use std::{net::TcpStream, os::windows::prelude::AsRawSocket};
+//use std::{net::TcpStream, os::windows::prelude::AsRawSocket};
 
 // use mac_address::get_mac_address;
 pub fn gen_uuid(ip: &str, mac: &str) -> String {
